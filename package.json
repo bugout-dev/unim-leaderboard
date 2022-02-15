@@ -1,0 +1,26 @@
+{
+  "name": "unim-leaderboard",
+  "version": "0.0.1",
+  "description": "Constructs UNIM leaderboard and exposes the leaderboard via a simple HTTP API",
+  "main": "build/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "node_modules/.bin/tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bugout-dev/unim-leaderboard.git"
+  },
+  "keywords": [
+    "web3"
+  ],
+  "author": "Moonstream Engineering",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/bugout-dev/unim-leaderboard/issues"
+  },
+  "homepage": "https://github.com/bugout-dev/unim-leaderboard#readme",
+  "devDependencies": {
+    "typescript": "^4.5.5"
+  }
+}
