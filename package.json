@@ -4,6 +4,7 @@
   "description": "Constructs UNIM leaderboard and exposes the leaderboard via a simple HTTP API",
   "main": "build/index.js",
   "scripts": {
+    "server": "./node_modules/.bin/tsc && node build/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "node_modules/.bin/tsc"
   },
@@ -25,7 +26,9 @@
     "typescript": "^4.5.5"
   },
   "dependencies": {
+    "@koa/cors": "^3.1.0",
     "@koa/router": "^10.1.1",
+    "@types/koa__cors": "^3.1.1",
     "@types/koa__router": "^8.0.11",
     "koa": "^2.13.4"
   }
