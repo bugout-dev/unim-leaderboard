@@ -24,9 +24,9 @@ interface CountUNIMResponse {
 
 
 interface QuartilesResponse {
-  persent_25: LeaderboardItem;
-  persent_50: LeaderboardItem;
-  persent_75: LeaderboardItem;
+  ">25": LeaderboardItem;
+  ">50": LeaderboardItem;
+  ">75": LeaderboardItem;
 }
 
 interface LeaderboardItem {
@@ -106,9 +106,9 @@ router.get("/count/unim", async (ctx) => {
 
 router.get("/quartiles", async (ctx) => {
   const response: QuartilesResponse = {
-    persent_25: ctx.full_data["25%"],
-    persent_50: ctx.full_data["50%"],
-    persent_75: ctx.full_data["75%"],
+    ">25": ctx.full_data["25%"],
+    ">50": ctx.full_data["50%"],
+    ">75": ctx.full_data["75%"],
   };
   ctx.body = response;
 });
