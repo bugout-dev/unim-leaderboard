@@ -31,6 +31,7 @@
     "@koa/router": "^10.1.1",
     "@types/koa__cors": "^3.1.1",
     "@types/koa__router": "^8.0.11",
+    "axios": "^0.26.0",
     "koa": "^2.13.4"
   }
 }
