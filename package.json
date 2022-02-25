@@ -4,6 +4,7 @@
   "description": "Constructs UNIM leaderboard and exposes the leaderboard via a simple HTTP API",
   "main": "build/index.js",
   "scripts": {
+    "build": "./node_modules/.bin/tsc",
     "server": "./node_modules/.bin/tsc && node build/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "node_modules/.bin/tsc"
