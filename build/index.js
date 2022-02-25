@@ -24,7 +24,7 @@ const toTimestamp = (strDate) => {
     const dt = Date.parse(strDate);
     return dt / 1000;
 };
-function firstAsync(app) {
+function syncBucket(app) {
     return __awaiter(this, void 0, void 0, function* () {
         // Request data update
         let url = `https://s3.amazonaws.com/static.simiotics.com/LEADERBOARD_DATA/IMDEX_FILE.json`;
@@ -42,11 +42,11 @@ function firstAsync(app) {
             headers: { "Content-Type": "application/json" },
         });
         app.context.full_data = yield response.data;
-        console.log(response.headers);
         app.context.last_modified = response.headers["last-modified"];
+        console.log("synchronized");
     });
 }
-firstAsync(app);
+syncBucket(app);
 router.get("/status", (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const nowEpoch = toTimestamp(ctx.last_modified);
     const response = {
@@ -67,8 +67,25 @@ router.get("/count/unim", (ctx) => __awaiter(void 0, void 0, void 0, function* (
     };
     ctx.body = response;
 }));
+router.get("/quartiles", (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+    const response = {
+        persent_25: ctx.full_data["25%"],
+        persent_50: ctx.full_data["50%"],
+        persent_75: ctx.full_data["75%"],
+    };
+    ctx.body = response;
+}));
+router.get("/position", (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+    if (ctx.query.address && ctx.query.window_size) {
+        console.log(ctx.query.address.toString());
+        const position = ctx.index_data["data"][ctx.query.address.toString()]["position"];
+        let window_size = parseInt(ctx.query.window_size[0]);
+        const response = ctx.full_data["data"].slice(position - window_size, position + window_size + 1);
+        ctx.body = response;
+    }
+}));
 router.post("/update", (ctx) => __awaiter(void 0, void 0, void 0, function* () {
-    firstAsync(app);
+    syncBucket(app);
     ctx.body = "Updating";
 }));
 router.get("/leaderboard", (ctx) => __awaiter(void 0, void 0, void 0, function* () {

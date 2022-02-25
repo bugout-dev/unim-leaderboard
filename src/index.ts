@@ -22,6 +22,13 @@ interface CountUNIMResponse {
   unim: number;
 }
 
+
+interface QuartilesResponse {
+  persent_25: LeaderboardItem;
+  persent_50: LeaderboardItem;
+  persent_75: LeaderboardItem;
+}
+
 interface LeaderboardItem {
   address: string;
   unim: number;
@@ -95,6 +102,27 @@ router.get("/count/unim", async (ctx) => {
   };
   ctx.body = response;
 });
+
+
+router.get("/quartiles", async (ctx) => {
+  const response: QuartilesResponse = {
+    persent_25: ctx.full_data["25%"],
+    persent_50: ctx.full_data["50%"],
+    persent_75: ctx.full_data["75%"],
+  };
+  ctx.body = response;
+});
+
+router.get("/position", async (ctx) => {
+
+  if (ctx.query.address && ctx.query.window_size) {
+    const position = ctx.index_data["data"][ctx.query.address.toString()]["position"];
+    let window_size = parseInt(ctx.query.window_size[0])
+    const response= ctx.full_data["data"].slice(position - window_size, position + window_size +1) 
+    ctx.body = response;
+  }
+});
+
 
 
 router.post("/update", async (ctx) => {
