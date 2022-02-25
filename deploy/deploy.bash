@@ -35,6 +35,11 @@ echo "UNIM_LEADERBOARD_PORT=8080" > "$PARAMETERS_ENV_PATH"
 
 echo
 echo
+echo -e "${PREFIX_INFO} Building project with npm"
+npm install --prefix "${APP_DIR}"
+
+echo
+echo
 echo -e "${PREFIX_INFO} Replacing existing unim-leaderboard server definition with ${SERVICE_FILE}"
 chmod 644 "${SCRIPT_DIR}/${SERVICE_FILE}"
 cp "${SCRIPT_DIR}/${SERVICE_FILE}" "/etc/systemd/system/${SERVICE_FILE}"
