@@ -20,7 +20,7 @@ SECRETS_DIR="${SECRETS_DIR:-/home/ubuntu/unim-leaderboard-secrets}"
 PARAMETERS_ENV_PATH="${SECRETS_DIR}/app.env"
 
 # Service file
-SERVICE_FILE="${SCRIPT_DIR}/unimleaderboard.service"
+SERVICE_FILE="unimleaderboard.service"
 
 set -eu
 
