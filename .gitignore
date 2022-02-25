@@ -174,3 +174,5 @@ dist
 prod.env
 dev.env
 build/
+package-lock.json
+
