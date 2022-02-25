@@ -11,7 +11,7 @@ User=ubuntu
 Group=www-data
 WorkingDirectory=/home/ubuntu/unim-leaderboard
 EnvironmentFile=/home/ubuntu/unim-leaderboard-secrets/app.env
-ExecStart=/home/ubuntu/unim-leaderboard npm run start
+ExecStart=npm run server
 TimeoutStopSec=180
 SyslogIdentifier=unimleaderboard
 
