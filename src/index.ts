@@ -2,6 +2,7 @@ import Koa from "koa";
 import Router from "@koa/router";
 import cors from "@koa/cors";
 import axios from "axios";
+import web3 from "web3";
 
 const app = new Koa();
 const router = new Router();
@@ -19,9 +20,8 @@ interface CountAddressesResponse {
 }
 
 interface CountUNIMResponse {
-  unim: number;
+  balance: number;
 }
-
 
 interface QuartilesResponse {
   persent_25: LeaderboardItem;
@@ -31,7 +31,7 @@ interface QuartilesResponse {
 
 interface LeaderboardItem {
   address: string;
-  unim: number;
+  balance: number;
 }
 
 interface LeaderboardResponse {
@@ -42,10 +42,10 @@ interface LeaderboardResponse {
   limit: number;
 }
 
-const toTimestamp = (strDate: string) => {  
-  const dt = Date.parse(strDate);  
-  return dt / 1000;  
-}  
+const toTimestamp = (strDate: string) => {
+  const dt = Date.parse(strDate);
+  return dt / 1000;
+};
 
 async function syncBucket(app: any) {
   // Request data update
@@ -68,24 +68,19 @@ async function syncBucket(app: any) {
     headers: { "Content-Type": "application/json" },
   });
 
-
   app.context.full_data = await response.data;
   app.context.last_modified = response.headers["last-modified"];
   console.log("synchronized");
-
-
 }
 
-
-syncBucket(app)
-
+syncBucket(app);
 
 router.get("/status", async (ctx) => {
   const nowEpoch = toTimestamp(ctx.last_modified);
   const response: StatusResponse = {
     lastRefresh: nowEpoch,
     nextRefresh: nowEpoch + 10800,
-  };  
+  };
   ctx.body = response;
 });
 
@@ -98,11 +93,10 @@ router.get("/count/addresses", async (ctx) => {
 
 router.get("/count/unim", async (ctx) => {
   const response: CountUNIMResponse = {
-    unim: ctx.full_data["total"],
+    balance: ctx.full_data["total"],
   };
   ctx.body = response;
 });
-
 
 router.get("/quartiles", async (ctx) => {
   const response: QuartilesResponse = {
@@ -114,20 +108,19 @@ router.get("/quartiles", async (ctx) => {
 });
 
 router.get("/position", async (ctx) => {
-
-  if (ctx.query.address && ctx.query.window_size) {
-    const position = ctx.index_data["data"][ctx.query.address.toString()]["position"];
-    let window_size = parseInt(ctx.query.window_size[0])
-    const response= ctx.full_data["data"].slice(position - window_size, position + window_size +1) 
+  const windowSizeRaw = ctx.query.window_size ? ctx.query.window_size[0] : "1";
+  const windowSize = parseInt(windowSizeRaw);
+  if (ctx.query.address) {
+    const address = web3.utils.toChecksumAddress(ctx.query.address.toString());
+    const position = ctx.index_data["data"][address]["position"];
+    const response = ctx.full_data["data"].slice(
+      position - windowSize,
+      position + windowSize + 1
+    );
     ctx.body = response;
+  } else {
+    ctx.body = {};
   }
-});
-
-
-
-router.post("/update", async (ctx) => {
-  syncBucket(app);
-  ctx.body = "Updating";
 });
 
 router.get("/leaderboard", async (ctx) => {
@@ -148,6 +141,11 @@ router.get("/leaderboard", async (ctx) => {
     limit: limit,
   };
   ctx.body = response;
+});
+
+router.post("/update", async (ctx) => {
+  syncBucket(app);
+  ctx.body = "Updating";
 });
 
 app.use(corsConfiguration).use(router.routes());
