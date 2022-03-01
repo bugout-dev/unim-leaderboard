@@ -20,7 +20,7 @@ interface CountAddressesResponse {
 }
 
 interface CountUNIMResponse {
-  unim: number;
+  balance: number;
 }
 
 interface QuartilesResponse {
@@ -31,7 +31,7 @@ interface QuartilesResponse {
 
 interface LeaderboardItem {
   address: string;
-  unim: number;
+  balance: number;
 }
 
 interface LeaderboardResponse {
@@ -93,7 +93,7 @@ router.get("/count/addresses", async (ctx) => {
 
 router.get("/count/unim", async (ctx) => {
   const response: CountUNIMResponse = {
-    unim: ctx.full_data["total"],
+    balance: ctx.full_data["total"],
   };
   ctx.body = response;
 });
