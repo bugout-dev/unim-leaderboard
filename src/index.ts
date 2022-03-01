@@ -22,7 +22,6 @@ interface CountUNIMResponse {
   unim: number;
 }
 
-
 interface QuartilesResponse {
   persent_25: LeaderboardItem;
   persent_50: LeaderboardItem;
@@ -42,10 +41,10 @@ interface LeaderboardResponse {
   limit: number;
 }
 
-const toTimestamp = (strDate: string) => {  
-  const dt = Date.parse(strDate);  
-  return dt / 1000;  
-}  
+const toTimestamp = (strDate: string) => {
+  const dt = Date.parse(strDate);
+  return dt / 1000;
+};
 
 async function syncBucket(app: any) {
   // Request data update
@@ -68,24 +67,19 @@ async function syncBucket(app: any) {
     headers: { "Content-Type": "application/json" },
   });
 
-
   app.context.full_data = await response.data;
   app.context.last_modified = response.headers["last-modified"];
   console.log("synchronized");
-
-
 }
 
-
-syncBucket(app)
-
+syncBucket(app);
 
 router.get("/status", async (ctx) => {
   const nowEpoch = toTimestamp(ctx.last_modified);
   const response: StatusResponse = {
     lastRefresh: nowEpoch,
     nextRefresh: nowEpoch + 10800,
-  };  
+  };
   ctx.body = response;
 });
 
@@ -103,7 +97,6 @@ router.get("/count/unim", async (ctx) => {
   ctx.body = response;
 });
 
-
 router.get("/quartiles", async (ctx) => {
   const response: QuartilesResponse = {
     persent_25: ctx.full_data["25%"],
@@ -114,16 +107,17 @@ router.get("/quartiles", async (ctx) => {
 });
 
 router.get("/position", async (ctx) => {
-
   if (ctx.query.address && ctx.query.window_size) {
-    const position = ctx.index_data["data"][ctx.query.address.toString()]["position"];
-    let window_size = parseInt(ctx.query.window_size[0])
-    const response= ctx.full_data["data"].slice(position - window_size, position + window_size +1) 
+    const position =
+      ctx.index_data["data"][ctx.query.address.toString()]["position"];
+    let window_size = parseInt(ctx.query.window_size[0]);
+    const response = ctx.full_data["data"].slice(
+      position - window_size,
+      position + window_size + 1
+    );
     ctx.body = response;
   }
 });
-
-
 
 router.post("/update", async (ctx) => {
   syncBucket(app);
