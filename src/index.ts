@@ -14,10 +14,6 @@ const corsConfiguration = cors({ allowMethods: "GET" });
 
 const UNIM_LEADERBOARD_PORT = process.env.UNIM_LEADERBOARD_PORT || 14601;
 const LEADERBOARD_APPLICATION_ID = process.env.LEADERBOARD_APPLICATION_ID || "";
-const LEADERBOARD_IMDEX_FILE_QUERY_NAME =
-  process.env.LEADERBOARD_IMDEX_FILE_QUERY_NAME || "";
-const LEADERBOARD_FULL_LIST_QUERY_NAME =
-  process.env.LEADERBOARD_FULL_LIST_QUERY_NAME || "";
 
 interface StatusResponse {
   lastRefresh: number;
@@ -51,10 +47,10 @@ interface LeaderboardResponse {
   limit: number;
 }
 
-const toTimestamp = (strDate: string) => {
-  const dt = Date.parse(strDate);
-  return dt / 1000;
-};
+// const toTimestamp = (strDate: string) => {
+//   const dt = Date.parse(strDate);
+//   return dt / 1000;
+// };
 
 async function checkAuth(ctx: Koa.BaseContext, next: () => Promise<any>) {
   if (ctx.headers["authorization"]) {
@@ -104,8 +100,8 @@ async function syncBucket(
 ) {
   // Request data update
 
-  if (!app.context.hasOwnProperty("status")) {
-    app.context.status = {};
+  if (!app.context.hasOwnProperty("cache_status")) {
+    app.context.cache_status = {};
   }
 
   let response = await axios.get(access_url, {
@@ -114,7 +110,7 @@ async function syncBucket(
 
   app.context["cache_name"] = await response.data;
 
-  app.context.status["cache_name"] = {
+  app.context.cache_status["cache_name"] = {
     "last-modified": response.headers["last-modified"],
     next_refresh: next_update,
   };
@@ -124,12 +120,10 @@ async function syncBucket(
 //syncBucket(app);
 
 router.get("/status", async (ctx) => {
-  const nowEpoch = toTimestamp(ctx.last_modified);
-  const response: StatusResponse = {
-    lastRefresh: nowEpoch,
-    nextRefresh: nowEpoch + 10800,
-  };
-  ctx.body = response;
+  if (!ctx.hasOwnProperty("status")) {
+    ctx.cache_status = {};
+  }
+  ctx.body = ctx.cache_status;
 });
 
 router.get("/count/addresses", async (ctx) => {
@@ -201,7 +195,7 @@ router.post("/update", async (ctx) => {
   const access_url = ctx.request.body.s3_pressign;
   const next_update = ctx.request.body.next_update;
   await syncBucket(app, cache_name, access_url, next_update);
-  ctx.body = ctx.context.status;
+  ctx.body = ctx.context.cache_status;
 });
 
 app.use(corsConfiguration).use(router.routes());
@@ -210,7 +204,7 @@ app.listen(UNIM_LEADERBOARD_PORT, () => {
   client
     .pingBrood()
     .then((response: BugoutTypes.BugoutPing) =>
-      console.log(`ping brood:`, response)
+      console.log(`Brood check:`, response)
     );
   console.log(
     `UNIM Leaderboard server listening on port ${UNIM_LEADERBOARD_PORT}`
