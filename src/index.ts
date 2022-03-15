@@ -14,7 +14,7 @@ app.use(bodyParser());
 const router = new Router();
 const corsConfiguration = cors({ allowMethods: "GET" });
 
-const UNIM_LEADERBOARD_PORT = process.env.UNIM_LEADERBOARD_PORT || 14601;
+const LEADERBOARD_PORT = process.env.LEADERBOARD_PORT || 14601;
 const LEADERBOARD_APPLICATION_ID = process.env.LEADERBOARD_APPLICATION_ID || "";
 const LEADERBOARD_MOONSTREAM_TOKEN =
   process.env.LEADERBOARD_MOONSTREAM_TOKEN || "";
@@ -106,7 +106,6 @@ async function checkAuth(ctx: Koa.BaseContext, next: () => Promise<any>) {
         const user: BugoutTypes.BugoutUser = await client.getUser(
           user_token_list[1]
         );
-        console.log(user);
         if (!user.verified) {
           console.log(
             `Attempted journal access by unverified Brood account: ${user.id}`
@@ -275,7 +274,8 @@ router.get("/leaderboard", async (ctx) => {
 });
 
 router.post("/update", async (ctx) => {
-  //console.log(ctx.request.body);
+  // sync cache with provided s3 bucket presign_url
+
   const cache_name = ctx.request.body.cache_name;
   const access_url = ctx.request.body.access_url;
   const next_update = ctx.request.body.next_update;
@@ -285,13 +285,11 @@ router.post("/update", async (ctx) => {
 
 app.use(corsConfiguration).use(router.routes());
 
-app.listen(UNIM_LEADERBOARD_PORT, () => {
+app.listen(LEADERBOARD_PORT, () => {
   client
     .pingBrood()
     .then((response: BugoutTypes.BugoutPing) =>
       console.log(`Brood check:`, response)
     );
-  console.log(
-    `UNIM Leaderboard server listening on port ${UNIM_LEADERBOARD_PORT}`
-  );
+  console.log(`UNIM Leaderboard server listening on port ${LEADERBOARD_PORT}`);
 });
