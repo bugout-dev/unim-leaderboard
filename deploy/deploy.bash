@@ -31,7 +31,7 @@ if [ ! -d "$SECRETS_DIR" ]; then
   mkdir "$SECRETS_DIR"
   echo -e "${PREFIX_WARN} Created new secrets directory" 
 fi
-echo "UNIM_LEADERBOARD_PORT=8080" > "$PARAMETERS_ENV_PATH"
+touch "$PARAMETERS_ENV_PATH"
 
 echo
 echo
