@@ -1,4 +1,5 @@
 import Koa from "koa";
+import bodyParser from "koa-bodyparser";
 import Router from "@koa/router";
 import cors from "@koa/cors";
 import axios from "axios";
@@ -9,11 +10,15 @@ import BugoutClient, { BugoutTypes } from "@bugout/bugout-js";
 const client = new BugoutClient();
 
 const app = new Koa();
+app.use(bodyParser());
 const router = new Router();
 const corsConfiguration = cors({ allowMethods: "GET" });
 
 const UNIM_LEADERBOARD_PORT = process.env.UNIM_LEADERBOARD_PORT || 14601;
 const LEADERBOARD_APPLICATION_ID = process.env.LEADERBOARD_APPLICATION_ID || "";
+const MOONSTREAM_ACCESS_TOKEN = process.env.MOONSTREAM_ACCESS_TOKEN || "";
+const FULL_DATA_QUERY_NAME = process.env.FULL_DATA_QUERY_NAME || "";
+const MOONSTREAM_QUERY_URL = process.env.MOONSTREAM_QUERY_URL || "";
 
 interface StatusResponse {
   lastRefresh: number;
@@ -47,10 +52,46 @@ interface LeaderboardResponse {
   limit: number;
 }
 
-// const toTimestamp = (strDate: string) => {
-//   const dt = Date.parse(strDate);
-//   return dt / 1000;
-// };
+function compare_rank(a: any, b: any) {
+  if (a.rank < b.rank) {
+    return -1;
+  }
+  if (a.rank > b.rank) {
+    return 1;
+  }
+  return 0;
+}
+
+function compare_addresses(a: any, b: any) {
+  if (a.rank < b.rank) {
+    return -1;
+  }
+  if (a.rank > b.rank) {
+    return 1;
+  }
+  return 0;
+}
+
+async function quantile(arr: any, q: any) {
+  /* get array of values and split it to quartiles parts  */
+  /* We need get rank and make quartiles by them not as bucket of position */
+
+  const sorted_array = arr.sort(compare_rank); // sort return array itself
+
+  const pos = sorted_array[sorted_array.length - 1].rank * q; // get desent rank
+  const base = Math.floor(pos); // round to floor
+
+  const floor_quartile_users = sorted_array
+    .filter((element: any) => {
+      return element.rank == base;
+    })
+    .sort(compare_addresses);
+
+  //const rest = pos - base;
+  if (floor_quartile_users.length > 0) {
+    return floor_quartile_users[floor_quartile_users.length - 1];
+  }
+}
 
 async function checkAuth(ctx: Koa.BaseContext, next: () => Promise<any>) {
   if (ctx.headers["authorization"]) {
@@ -63,7 +104,7 @@ async function checkAuth(ctx: Koa.BaseContext, next: () => Promise<any>) {
         const user: BugoutTypes.BugoutUser = await client.getUser(
           user_token_list[1]
         );
-
+        console.log(user);
         if (!user.verified) {
           console.log(
             `Attempted journal access by unverified Brood account: ${user.id}`
@@ -93,7 +134,6 @@ async function checkAuth(ctx: Koa.BaseContext, next: () => Promise<any>) {
 router.use(["/update"], checkAuth);
 
 async function syncBucket(
-  app: any,
   cache_name: string,
   access_url: string,
   next_update: number
@@ -105,24 +145,66 @@ async function syncBucket(
   }
 
   let response = await axios.get(access_url, {
-    headers: { "Content-Type": "application/json" },
+    headers: { Accept: "application/json" },
   });
 
-  app.context["cache_name"] = await response.data;
+  app.context[cache_name] = await response.data;
 
-  app.context.cache_status["cache_name"] = {
+  app.context[cache_name]["%25"] = await quantile(response.data["data"], 0.25);
+  app.context[cache_name]["%50"] = await quantile(response.data["data"], 0.5);
+  app.context[cache_name]["%75"] = await quantile(response.data["data"], 0.75);
+
+  const index_data: { [key: string]: any } = {};
+
+  let sum = 0;
+
+  for (let i = 1; i < response.data["data"].length; i++) {
+    sum += response.data["data"][i].unim_balance;
+
+    index_data[response.data["data"][i]["address"]] = {
+      unim_balance: response.data["data"][i]["unim_balance"],
+      rank: response.data["data"][i]["rank"],
+      position: i,
+    };
+  }
+
+  app.context.full_data["total"] = sum;
+
+  app.context.index_data = index_data;
+
+  app.context.cache_status[cache_name] = {
     "last-modified": response.headers["last-modified"],
     next_refresh: next_update,
   };
   console.log(`synchronized ${cache_name}`);
 }
 
-//syncBucket(app);
+async function firstSync() {
+  // Get access to bucket
+  try {
+    let response = await axios.get(
+      `${MOONSTREAM_QUERY_URL}/queries/${FULL_DATA_QUERY_NAME}`,
+      {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${MOONSTREAM_ACCESS_TOKEN}`,
+        },
+      }
+    );
+
+    let data = await response.data;
+
+    let next_update = Math.floor(Date.now() / 1000) + 3 * 60 * 60;
+
+    await syncBucket(FULL_DATA_QUERY_NAME, data.url, next_update);
+  } catch (Error: any) {
+    console.log(Error.message);
+  }
+}
+
+firstSync();
 
 router.get("/status", async (ctx) => {
-  if (!ctx.hasOwnProperty("status")) {
-    ctx.cache_status = {};
-  }
   ctx.body = ctx.cache_status;
 });
 
@@ -142,9 +224,9 @@ router.get("/count/unim", async (ctx) => {
 
 router.get("/quartiles", async (ctx) => {
   const response: QuartilesResponse = {
-    persent_25: ctx.full_data["25%"],
-    persent_50: ctx.full_data["50%"],
-    persent_75: ctx.full_data["75%"],
+    persent_25: ctx.full_data["%25"],
+    persent_50: ctx.full_data["%50"],
+    persent_75: ctx.full_data["%75"],
   };
   ctx.body = response;
 });
@@ -154,12 +236,12 @@ router.get("/position", async (ctx) => {
   const windowSize = parseInt(windowSizeRaw);
   if (
     ctx.query.address &&
-    ctx.index_data["data"].includes(
+    ctx.index_data.hasOwnProperty(
       web3.utils.toChecksumAddress(ctx.query.address.toString())
     )
   ) {
     const address = web3.utils.toChecksumAddress(ctx.query.address.toString());
-    const position = ctx.index_data["data"][address]["position"];
+    const position = ctx.index_data[address]["position"];
     const response = ctx.full_data["data"].slice(
       position - windowSize,
       position + windowSize + 1
@@ -191,11 +273,12 @@ router.get("/leaderboard", async (ctx) => {
 });
 
 router.post("/update", async (ctx) => {
+  //console.log(ctx.request.body);
   const cache_name = ctx.request.body.cache_name;
-  const access_url = ctx.request.body.s3_pressign;
+  const access_url = ctx.request.body.access_url;
   const next_update = ctx.request.body.next_update;
-  await syncBucket(app, cache_name, access_url, next_update);
-  ctx.body = ctx.context.cache_status;
+  await syncBucket(cache_name, access_url, next_update);
+  ctx.body = ctx.cache_status;
 });
 
 app.use(corsConfiguration).use(router.routes());
