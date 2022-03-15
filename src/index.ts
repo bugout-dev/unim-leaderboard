@@ -150,9 +150,9 @@ async function syncBucket(
 
   app.context[cache_name] = await response.data;
 
-  app.context[cache_name]["%25"] = await quantile(response.data["data"], 0.25);
-  app.context[cache_name]["%50"] = await quantile(response.data["data"], 0.5);
-  app.context[cache_name]["%75"] = await quantile(response.data["data"], 0.75);
+  app.context[cache_name]["25%"] = await quantile(response.data["data"], 0.25);
+  app.context[cache_name]["50%"] = await quantile(response.data["data"], 0.5);
+  app.context[cache_name]["75%"] = await quantile(response.data["data"], 0.75);
 
   const index_data: { [key: string]: any } = {};
 
@@ -224,9 +224,9 @@ router.get("/count/unim", async (ctx) => {
 
 router.get("/quartiles", async (ctx) => {
   const response: QuartilesResponse = {
-    persent_25: ctx.full_data["%25"],
-    persent_50: ctx.full_data["%50"],
-    persent_75: ctx.full_data["%75"],
+    persent_25: ctx.full_data["25%"],
+    persent_50: ctx.full_data["50%"],
+    persent_75: ctx.full_data["75%"],
   };
   ctx.body = response;
 });
