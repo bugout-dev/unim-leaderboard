@@ -33,7 +33,6 @@ if [ ! -d "$SECRETS_DIR" ]; then
   mkdir "$SECRETS_DIR"
   echo -e "${PREFIX_WARN} Created new secrets directory" 
 fi
-echo "LEADERBOARD_PORT=8080" > "$PARAMETERS_ENV_PATH"
 
 echo
 echo
