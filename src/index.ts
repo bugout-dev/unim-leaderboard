@@ -16,9 +16,11 @@ const corsConfiguration = cors({ allowMethods: "GET" });
 
 const UNIM_LEADERBOARD_PORT = process.env.UNIM_LEADERBOARD_PORT || 14601;
 const LEADERBOARD_APPLICATION_ID = process.env.LEADERBOARD_APPLICATION_ID || "";
-const MOONSTREAM_ACCESS_TOKEN = process.env.MOONSTREAM_ACCESS_TOKEN || "";
-const FULL_DATA_QUERY_NAME = process.env.FULL_DATA_QUERY_NAME || "";
-const MOONSTREAM_QUERY_URL = process.env.MOONSTREAM_QUERY_URL || "";
+const LEADERBOARD_MOONSTREAM_TOKEN =
+  process.env.LEADERBOARD_MOONSTREAM_TOKEN || "";
+const LEADERBOARD_QUERY_NAME = process.env.LEADERBORD_QUERY_NAME || "full_data";
+const MOONSTREAM_URL =
+  process.env.MOONSTREAM_URL || "https://api.moonstream.to";
 
 interface StatusResponse {
   lastRefresh: number;
@@ -183,11 +185,11 @@ async function firstSync() {
   // Get access to bucket
   try {
     let response = await axios.get(
-      `${MOONSTREAM_QUERY_URL}/queries/${FULL_DATA_QUERY_NAME}`,
+      `${MOONSTREAM_URL}/queries/${LEADERBOARD_QUERY_NAME}`,
       {
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${MOONSTREAM_ACCESS_TOKEN}`,
+          Authorization: `Bearer ${LEADERBOARD_MOONSTREAM_TOKEN}`,
         },
       }
     );
@@ -196,7 +198,7 @@ async function firstSync() {
 
     let next_update = Math.floor(Date.now() / 1000) + 3 * 60 * 60;
 
-    await syncBucket(FULL_DATA_QUERY_NAME, data.url, next_update);
+    await syncBucket(LEADERBOARD_QUERY_NAME, data.url, next_update);
   } catch (Error: any) {
     console.log(Error.message);
   }
