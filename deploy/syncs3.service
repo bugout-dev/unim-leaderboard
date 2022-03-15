@@ -1,0 +1,11 @@
+[Unit]
+Description=Load synchronization with AWS S3
+After=network.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/unim-leaderboard/deploy
+EnvironmentFile=/home/ubuntu/unim-leaderboard-secrets/app.env
+ExecStart=bash /home/ubuntu/unim-leaderboard/deploy/sync_s3.bash

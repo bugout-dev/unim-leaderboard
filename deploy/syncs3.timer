@@ -1,0 +1,9 @@
+[Unit]
+Description=Load synchronization with AWS S3 each 3 hours
+
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=180m
+
+[Install]
+WantedBy=timers.target
