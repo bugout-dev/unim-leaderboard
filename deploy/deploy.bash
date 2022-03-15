@@ -21,6 +21,8 @@ PARAMETERS_ENV_PATH="${SECRETS_DIR}/app.env"
 
 # Service file
 SERVICE_FILE="unimleaderboard.service"
+SYNC_S3_FILE="syncs3.service"
+SYNC_S3_TIMER="syncs3.timer"
 
 set -eu
 
@@ -31,12 +33,21 @@ if [ ! -d "$SECRETS_DIR" ]; then
   mkdir "$SECRETS_DIR"
   echo -e "${PREFIX_WARN} Created new secrets directory" 
 fi
-touch "$PARAMETERS_ENV_PATH"
+echo "LEADERBOARD_PORT=8080" > "$PARAMETERS_ENV_PATH"
 
 echo
 echo
 echo -e "${PREFIX_INFO} Building project with npm"
 npm install --prefix "${APP_DIR}"
+
+echo
+echo
+echo -e "${PREFIX_INFO} Replacing existing Ethereum missing service and timer with: ${SYNC_S3_FILE}, ${SYNC_S3_TIMER}"
+chmod 644 "${SCRIPT_DIR}/${SYNC_S3_FILE}" "${SCRIPT_DIR}/${SYNC_S3_TIMER}"
+cp "${SCRIPT_DIR}/${SYNC_S3_FILE}" "/etc/systemd/system/${SYNC_S3_FILE}"
+cp "${SCRIPT_DIR}/${SYNC_S3_TIMER}" "/etc/systemd/system/${SYNC_S3_TIMER}"
+systemctl daemon-reload
+systemctl restart "${SYNC_S3_TIMER}"
 
 echo
 echo
